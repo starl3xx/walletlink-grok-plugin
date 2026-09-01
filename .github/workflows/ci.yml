@@ -1,0 +1,17 @@
+name: ci
+
+on:
+  pull_request:
+  push:
+    branches: [main]
+  workflow_dispatch:
+
+jobs:
+  smoke:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+      - name: Validate manifests and smoke-test the live server
+        env:
+          WALLETLINK_API_KEY: ${{ secrets.WALLETLINK_API_KEY }}
+        run: bash scripts/smoke.sh

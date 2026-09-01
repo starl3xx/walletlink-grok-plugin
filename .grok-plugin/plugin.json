@@ -1,0 +1,14 @@
+{
+  "name": "walletlink",
+  "version": "1.0.0",
+  "description": "Resolve Ethereum wallet addresses to the X and Farcaster accounts their owners attested, and find the wallets behind a handle, through the hosted walletlink.social MCP server.",
+  "author": {
+    "name": "walletlink.social",
+    "url": "https://walletlink.social"
+  },
+  "homepage": "https://walletlink.social",
+  "repository": "https://github.com/starl3xx/walletlink-grok-plugin",
+  "license": "MIT",
+  "keywords": ["walletlink", "ethereum", "farcaster", "ens", "mcp"],
+  "logo": "assets/logo.png"
+}
