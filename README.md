@@ -16,7 +16,7 @@ Nothing is inferred from display names or bios.
 - “Who is 0xabc…?”: resolve one address to its X handle, Farcaster account,
   ENS name, Lens profile and GitHub account, with attestation and reachability
   for each.
-- Resolve a holder list in one batched call, up to the plan’s batch ceiling.
+- Resolve a holder list in one batched call, up to 50 addresses per call.
 - Reverse lookups: which wallets are attested to an X handle or a Farcaster
   username, ordered by follower count.
 - Check index coverage and the account’s credit balance, free.

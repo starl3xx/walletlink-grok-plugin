@@ -32,8 +32,8 @@ weaker evidence.
 | `walletlink_account_balance` | Credits left and rate-limit standing | Free |
 
 “Who is 0xabc?” is one `walletlink_resolve_wallets` call with one address. A
-holder list is the same call with up to the batch ceiling of addresses; send
-them all in one call rather than splitting, since splitting saves no credits.
+holder list is the same call with up to 50 addresses; send them all in one
+call rather than splitting, since splitting saves no credits.
 
 The reverse direction is the expensive one: a single widely held handle can
 spend 100 credits in one page. Call `walletlink_account_balance` first when

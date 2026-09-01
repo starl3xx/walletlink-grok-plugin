@@ -3,15 +3,20 @@
 #
 # Three checks, cheapest first:
 #   1. The manifest files parse and carry the fields the marketplace reads.
-#   2. The MCP endpoint answers an initialize with the right server name.
+#   2. The MCP endpoint answers an initialize with a real serverInfo.
 #   3. tools/list names every tool the skill documents.
 #
 # A keyed resolve runs only when WALLETLINK_API_KEY is set, so a fork's CI
 # passes without a secret. Discovery is IP-rate-limited at the server (120 an
-# hour), which a CI run that calls it twice does not approach.
+# hour), which a CI run that calls it three times does not approach.
 set -euo pipefail
 
+# Manifest paths are repo-relative, so run from the repo root wherever the
+# script was invoked from.
+cd "$(dirname "$0")/.."
+
 MCP_URL="${MCP_URL:-https://walletlink.social/api/mcp}"
+CURL=(curl -sS --max-time 30)
 
 fail() {
   echo "FAIL: $1" >&2
@@ -38,31 +43,46 @@ echo "ok: manifests"
 # --- 2. initialize ----------------------------------------------------------
 
 # The server answers JSON or SSE depending on the client; accept both and
-# capture the session id some transports issue.
+# capture the session id some transports issue. The assertion is on
+# serverInfo, which only a successful initialize carries: a 401 challenge or
+# an error body also mentions the walletlink.social domain, so the domain
+# alone proves nothing.
 HEADERS_FILE="$(mktemp)"
+trap 'rm -f "$HEADERS_FILE"' EXIT
 INIT_BODY='{"jsonrpc":"2.0","id":1,"method":"initialize","params":{"protocolVersion":"2025-03-26","capabilities":{},"clientInfo":{"name":"walletlink-grok-plugin-ci","version":"1.0.0"}}}'
 
-INIT_RESPONSE="$(curl -sS -X POST "$MCP_URL" \
+INIT_RESPONSE="$("${CURL[@]}" -X POST "$MCP_URL" \
   -H 'Content-Type: application/json' \
   -H 'Accept: application/json, text/event-stream' \
   -D "$HEADERS_FILE" \
   --data "$INIT_BODY")" || fail "initialize did not answer"
 
+echo "$INIT_RESPONSE" | grep -q '"serverInfo"' \
+  || fail "initialize answered without serverInfo: $INIT_RESPONSE"
 echo "$INIT_RESPONSE" | grep -q 'walletlink.social' \
   || fail "initialize answered without the server name: $INIT_RESPONSE"
 
 SESSION_ID="$(awk 'tolower($1) == "mcp-session-id:" {print $2}' "$HEADERS_FILE" | tr -d '\r')"
-
-echo "ok: initialize"
-
-# --- 3. tools/list ----------------------------------------------------------
 
 SESSION_HEADER=()
 if [ -n "$SESSION_ID" ]; then
   SESSION_HEADER=(-H "mcp-session-id: $SESSION_ID")
 fi
 
-LIST_RESPONSE="$(curl -sS -X POST "$MCP_URL" \
+# The lifecycle notification the spec expects between initialize and normal
+# operation. Not asserted on: the server accepts requests without it today,
+# and this exists so the test keeps passing if that ever tightens.
+"${CURL[@]}" -X POST "$MCP_URL" \
+  -H 'Content-Type: application/json' \
+  -H 'Accept: application/json, text/event-stream' \
+  ${SESSION_HEADER[@]+"${SESSION_HEADER[@]}"} \
+  --data '{"jsonrpc":"2.0","method":"notifications/initialized"}' > /dev/null || true
+
+echo "ok: initialize"
+
+# --- 3. tools/list ----------------------------------------------------------
+
+LIST_RESPONSE="$("${CURL[@]}" -X POST "$MCP_URL" \
   -H 'Content-Type: application/json' \
   -H 'Accept: application/json, text/event-stream' \
   ${SESSION_HEADER[@]+"${SESSION_HEADER[@]}"} \
@@ -85,7 +105,7 @@ echo "ok: tools/list names all five tools"
 # --- 4. a keyed resolve, when a key is available ----------------------------
 
 if [ -n "${WALLETLINK_API_KEY:-}" ]; then
-  CALL_RESPONSE="$(curl -sS -X POST "$MCP_URL" \
+  CALL_RESPONSE="$("${CURL[@]}" -X POST "$MCP_URL" \
     -H 'Content-Type: application/json' \
     -H 'Accept: application/json, text/event-stream' \
     -H "Authorization: Bearer $WALLETLINK_API_KEY" \
