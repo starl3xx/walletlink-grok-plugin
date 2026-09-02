@@ -34,6 +34,8 @@ the record’s strongest evidence, not each identity separately.
 | `walletlink_wallets_by_farcaster_username` | Farcaster username to its wallets | 1 credit per wallet returned, up to 100 a page |
 | `walletlink_index_coverage` | How much of the index carries each identity type | Free |
 | `walletlink_account_balance` | Credits left and rate-limit standing | Free |
+| `walletlink_submit_job` | A deep scan of a large list: live resolution on wallets the index has not checked | Billed as matches when the job completes, same price as resolving |
+| `walletlink_job_status` | Progress and paged results for a submitted job | Free |
 
 “Who is 0xabc?” is one `walletlink_resolve_wallets` call with one address. A
 holder list is the same call with up to 50 addresses; send them all in one
@@ -45,6 +47,14 @@ the reset time from the quota block every result carries.
 The reverse direction is the expensive one: a single widely held handle can
 spend 100 credits in one page. Call `walletlink_account_balance` first when
 that matters.
+
+For a list above 50 addresses, or when never-checked wallets deserve a live
+resolution, submit a job instead: `walletlink_submit_job` takes up to the
+account’s balance-derived cap in one call, runs the full pipeline in the
+background, and bills matches only at completion; a failed job is never
+billed. One job may be active per account. Poll `walletlink_job_status` for
+free; completed results arrive one 100-row page per call, and `next_offset`
+continues until it is null.
 
 ## Reading results
 

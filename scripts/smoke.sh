@@ -94,13 +94,15 @@ for TOOL in \
   walletlink_wallets_by_x_handle \
   walletlink_wallets_by_farcaster_username \
   walletlink_index_coverage \
-  walletlink_account_balance
+  walletlink_account_balance \
+  walletlink_submit_job \
+  walletlink_job_status
 do
   echo "$LIST_RESPONSE" | grep -q "$TOOL" \
     || fail "tools/list is missing $TOOL"
 done
 
-echo "ok: tools/list names all five tools"
+echo "ok: tools/list names all seven tools"
 
 # --- 4. a keyed resolve, when a key is available ----------------------------
 
