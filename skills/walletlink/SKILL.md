@@ -36,13 +36,17 @@ the record’s strongest evidence, not each identity separately.
 | `walletlink_account_balance` | Credits left and rate-limit standing | Free |
 | `walletlink_submit_job` | A deep scan of a large list: live resolution on wallets the index has not checked | Billed as matches when the job completes, same price as resolving |
 | `walletlink_job_status` | Progress and paged results for a submitted job | Free |
+| `walletlink_estimate_list` | A quote before the spend: how many of a list are in the index and what a resolve would bill | Free; weighed like the batch it previews; minimum ten distinct wallets; counts only |
 
 “Who is 0xabc?” is one `walletlink_resolve_wallets` call with one address. A
 holder list is the same call with up to 50 addresses; send them all in one
-call rather than splitting, since splitting saves no credits. Pace multi-batch
-runs a minute apart: a batch spends one request-unit per address of the
-60-per-minute window, so a full 50-address call is nearly a whole minute. Read
-the reset time from the quota block every result carries.
+call rather than splitting, since splitting saves no credits. A batch spends
+one request-unit per address of the per-minute window, and a full batch fills
+most of a minute on every plan (the default plan gives 60 units per minute and
+50-address batches; a live Scale or Index pack raises both). Pace multi-batch
+runs a minute apart and read the reset time from the quota block every result
+carries. Unsure whether a list is worth resolving? `walletlink_estimate_list`
+answers with counts only, free, before anything is billed.
 
 The reverse direction is the expensive one: a single widely held handle can
 spend 100 credits in one page. Call `walletlink_account_balance` first when

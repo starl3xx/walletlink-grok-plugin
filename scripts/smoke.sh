@@ -96,13 +96,14 @@ for TOOL in \
   walletlink_index_coverage \
   walletlink_account_balance \
   walletlink_submit_job \
-  walletlink_job_status
+  walletlink_job_status \
+  walletlink_estimate_list
 do
   echo "$LIST_RESPONSE" | grep -q "$TOOL" \
     || fail "tools/list is missing $TOOL"
 done
 
-echo "ok: tools/list names all seven tools"
+echo "ok: tools/list names all eight tools"
 
 # --- 4. a keyed resolve, when a key is available ----------------------------
 
