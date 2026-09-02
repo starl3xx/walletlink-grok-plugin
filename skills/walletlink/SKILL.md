@@ -15,11 +15,15 @@ accounts its owner published, and which addresses a given X handle or Farcaster
 account is attested to. Balances, transfers and prices are a block explorer’s
 job, not this server’s.
 
-Every link was published by the address owner, in an onchain ENS record or a
-Farcaster verification, or it is labelled as correlated rather than attested.
+An identity is attested when the wallet owner published the link themselves:
+a Farcaster verification, an onchain ENS record, an attested-social sign-in,
+or a manually verified record. Anything else is correlated, and labelled so.
 Nothing is inferred from a display name or a bio. This distinction is the
-product: treat `attested: true` as the owner’s own claim, and anything else as
-weaker evidence.
+product: `attested: true` is the owner’s own claim; `attested: false` means
+the record rests on correlation alone; `attested: null` means the record
+carried no classified evidence, which is a different claim from “not
+attested”. Evidence classes are recorded per wallet, so `attested` reflects
+the record’s strongest evidence, not each identity separately.
 
 ## The tools
 
@@ -33,7 +37,10 @@ weaker evidence.
 
 “Who is 0xabc?” is one `walletlink_resolve_wallets` call with one address. A
 holder list is the same call with up to 50 addresses; send them all in one
-call rather than splitting, since splitting saves no credits.
+call rather than splitting, since splitting saves no credits. Pace multi-batch
+runs a minute apart: a batch spends one request-unit per address of the
+60-per-minute window, so a full 50-address call is nearly a whole minute. Read
+the reset time from the quota block every result carries.
 
 The reverse direction is the expensive one: a single widely held handle can
 spend 100 credits in one page. Call `walletlink_account_balance` first when
