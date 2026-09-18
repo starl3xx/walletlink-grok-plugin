@@ -17,7 +17,7 @@ job, not this server’s.
 
 An identity is attested when the wallet owner published the link themselves:
 a Farcaster verification, an onchain ENS record, an attested-social sign-in,
-or a manually verified record. Anything else is correlated, and labelled so.
+or a manually verified record. Anything else is correlated, and labeled so.
 Nothing is inferred from a display name or a bio. This distinction is the
 product: `attested: true` is the owner’s own claim; `attested: false` means
 the record rests on correlation alone; `attested: null` means the record
