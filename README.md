@@ -43,12 +43,19 @@ Declared for review, per the marketplace security expectations:
     consent screen on the first tool call (PKCE, public client, dynamic client
     registration supported). Access tokens last an hour and renew.
   - **API key**: an `Authorization: Bearer wts_live_...` header, self-serve at
-    [walletlink.social](https://walletlink.social) for accounts holding
-    credits.
+    [walletlink.social](https://walletlink.social) for any signed-in
+    account.
   - **x402**: agents can buy access with USDC on Base, no account needed. See
     the [agent pack](https://docs.walletlink.social/agent-pack).
 - Discovery (`initialize`, `tools/list`) needs no credential and is
   rate-limited by IP at the server.
+
+**In Grok, use an API key.** The Grok chat host cannot open a consent screen
+and reports `no_auth_link`, so an OAuth connection never completes there. The
+symptom is all eight tools listed, then every call asking to sign in again.
+Create a key from the account menu at [walletlink.social](https://walletlink.social)
+(any signed-in account can, and the free allowance applies) and paste it into
+the connector’s key field.
 
 ## Pricing and limits
 

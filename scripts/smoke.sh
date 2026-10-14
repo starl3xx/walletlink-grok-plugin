@@ -1,10 +1,11 @@
 #!/usr/bin/env bash
 # Smoke-tests the plugin against the live server.
 #
-# Three checks, cheapest first:
+# Four checks, cheapest first:
 #   1. The manifest files parse and carry the fields the marketplace reads.
-#   2. The MCP endpoint answers an initialize with a real serverInfo.
-#   3. tools/list names every tool the skill documents.
+#   2. SKILL.md still matches the copy the product publishes at /skill.md.
+#   3. The MCP endpoint answers an initialize with a real serverInfo.
+#   4. tools/list names every tool the skill documents.
 #
 # A keyed resolve runs only when WALLETLINK_API_KEY is set, so a fork's CI
 # passes without a secret. Discovery is IP-rate-limited at the server (120 an
@@ -16,6 +17,7 @@ set -euo pipefail
 cd "$(dirname "$0")/.."
 
 MCP_URL="${MCP_URL:-https://walletlink.social/api/mcp}"
+SKILL_URL="${SKILL_URL:-https://walletlink.social/skill.md}"
 CURL=(curl -sS --max-time 30)
 
 fail() {
@@ -40,7 +42,32 @@ grep -q '^name: walletlink$' skills/walletlink/SKILL.md \
 
 echo "ok: manifests"
 
-# --- 2. initialize ----------------------------------------------------------
+# --- 2. the skill has not drifted from the published copy -------------------
+
+# SKILL.md is a copy of what the product serves at /skill.md, which is generated
+# from its canonical sentence and figure modules. A copy kept by hand drifts
+# silently and cannot be caught by reading it: this one spelled "labelled" for
+# months after the product settled on American English, and it shipped without
+# the paragraph telling a chat-host agent that OAuth can never complete there,
+# which is the one instruction a Grok-hosted caller most needs.
+#
+# So compare the shipped file with the live URL byte for byte. A failure here is
+# usually not a broken plugin, it is the product having moved. Regenerate with
+#
+#   curl -sS https://walletlink.social/skill.md > skills/walletlink/SKILL.md
+#
+# and commit that, rather than editing the file by hand.
+PUBLISHED_SKILL="$("${CURL[@]}" "$SKILL_URL")" || fail "could not fetch $SKILL_URL"
+[ -n "$PUBLISHED_SKILL" ] || fail "$SKILL_URL answered empty"
+
+# Command substitution strips trailing newlines, so printf restores the single
+# one the file ends with; without it every run would differ on the last line.
+diff -u skills/walletlink/SKILL.md <(printf '%s\n' "$PUBLISHED_SKILL") \
+  || fail "SKILL.md has drifted from $SKILL_URL (diff above; regenerate, do not hand-edit)"
+
+echo "ok: skill matches the published copy"
+
+# --- 3. initialize ----------------------------------------------------------
 
 # The server answers JSON or SSE depending on the client; accept both and
 # capture the session id some transports issue. The assertion is on
@@ -80,7 +107,7 @@ fi
 
 echo "ok: initialize"
 
-# --- 3. tools/list ----------------------------------------------------------
+# --- 4. tools/list ----------------------------------------------------------
 
 LIST_RESPONSE="$("${CURL[@]}" -X POST "$MCP_URL" \
   -H 'Content-Type: application/json' \
@@ -105,7 +132,7 @@ done
 
 echo "ok: tools/list names all eight tools"
 
-# --- 4. a keyed resolve, when a key is available ----------------------------
+# --- 5. a keyed resolve, when a key is available ----------------------------
 
 if [ -n "${WALLETLINK_API_KEY:-}" ]; then
   CALL_RESPONSE="$("${CURL[@]}" -X POST "$MCP_URL" \
